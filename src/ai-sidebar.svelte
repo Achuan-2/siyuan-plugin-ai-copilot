@@ -470,17 +470,17 @@
                 if (hasImages) {
                     const contentParts: any[] = [];
 
-                    // 先添加上下文文档（如果有）
-                    let textContent = '';
+                    // 先添加用户输入
+                    let textContent = userContent;
+
+                    // 然后添加上下文文档（如果有）
                     if (contextDocuments.length > 0) {
                         const contextText = contextDocuments
                             .map(doc => `## 文档: ${doc.title}\n\n${doc.content}`)
                             .join('\n\n---\n\n');
-                        textContent += `以下是相关文档作为上下文：\n\n${contextText}\n\n---\n\n`;
+                        textContent += `\n\n---\n\n以下是相关文档作为上下文：\n\n${contextText}`;
                     }
 
-                    // 添加用户输入
-                    textContent += userContent;
                     contentParts.push({ type: 'text', text: textContent });
 
                     // 添加图片
@@ -509,7 +509,7 @@
                     lastMessage.content = contentParts;
                 } else {
                     // 纯文本格式
-                    let enhancedContent = '';
+                    let enhancedContent = userContent;
 
                     // 添加文本文件附件
                     if (lastUserMessage.attachments && lastUserMessage.attachments.length > 0) {
@@ -524,7 +524,7 @@
                             .join('\n\n---\n\n');
 
                         if (attachmentTexts) {
-                            enhancedContent += `以下是附件内容：\n\n${attachmentTexts}\n\n---\n\n`;
+                            enhancedContent += `\n\n---\n\n以下是附件内容：\n\n${attachmentTexts}`;
                         }
                     }
 
@@ -533,12 +533,10 @@
                         const contextText = contextDocuments
                             .map(doc => `## 文档: ${doc.title}\n\n${doc.content}`)
                             .join('\n\n---\n\n');
-                        enhancedContent += `以下是相关文档作为上下文：\n\n${contextText}\n\n---\n\n`;
+                        enhancedContent += `\n\n---\n\n以下是相关文档作为上下文：\n\n${contextText}`;
                     }
 
-                    if (enhancedContent) {
-                        lastMessage.content = `${enhancedContent}我的问题：${userContent}`;
-                    }
+                    lastMessage.content = enhancedContent;
                 }
             }
         }
