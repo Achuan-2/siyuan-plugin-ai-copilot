@@ -8,6 +8,7 @@
     import type { ProviderConfig } from './defaultSettings';
     import { settingsStore } from './stores/settings';
     import { confirm, Constants } from 'siyuan';
+    import { t } from './utils/i18n';
 
     export let plugin: any;
 
@@ -135,7 +136,7 @@
                     messages[0].content = settings.aiSystemPrompt;
                 }
 
-                console.debug('AI Sidebar: 设置已更新');
+                console.debug('AI Sidebar: ' + t('common.configComplete'));
             }
         });
 
@@ -245,13 +246,13 @@
     // 添加图片附件
     async function addImageAttachment(file: File) {
         if (!file.type.startsWith('image/')) {
-            pushErrMsg('只支持图片文件');
+            pushErrMsg(t('aiSidebar.errors.imageOnly'));
             return;
         }
 
         // 检查文件大小 (最大 10MB)
         if (file.size > 10 * 1024 * 1024) {
-            pushErrMsg('图片文件过大，最大支持 10MB');
+            pushErrMsg(t('aiSidebar.errors.imageTooLarge'));
             return;
         }
 
@@ -272,7 +273,7 @@
             ];
         } catch (error) {
             console.error('Add image error:', error);
-            pushErrMsg('添加图片失败');
+            pushErrMsg(t('aiSidebar.errors.addImageFailed'));
         } finally {
             isUploadingFile = false;
         }
@@ -292,14 +293,14 @@
         const isImage = file.type.startsWith('image/');
 
         if (!isText && !isImage) {
-            pushErrMsg('只支持文本文件和图片文件');
+            pushErrMsg(t('aiSidebar.errors.textAndImageOnly'));
             return;
         }
 
         // 检查文件大小 (文本文件最大 5MB，图片最大 10MB)
         const maxSize = isImage ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > maxSize) {
-            pushErrMsg(`文件过大，最大支持 ${maxSize / 1024 / 1024}MB`);
+            pushErrMsg(t('aiSidebar.errors.fileTooLarge'));
             return;
         }
 
@@ -324,7 +325,7 @@
             }
         } catch (error) {
             console.error('Add file error:', error);
-            pushErrMsg('添加文件失败');
+            pushErrMsg(t('aiSidebar.errors.addFileFailed'));
         } finally {
             isUploadingFile = false;
         }
@@ -435,18 +436,18 @@
         // 检查设置
         const providerConfig = getCurrentProviderConfig();
         if (!providerConfig) {
-            pushErrMsg('请先在设置中配置AI平台');
+            pushErrMsg(t('aiSidebar.errors.noProvider'));
             return;
         }
 
         if (!providerConfig.apiKey) {
-            pushErrMsg('请先在设置中配置 API Key');
+            pushErrMsg(t('aiSidebar.errors.noApiKey'));
             return;
         }
 
         const modelConfig = getCurrentModelConfig();
         if (!modelConfig) {
-            pushErrMsg('请选择一个模型');
+            pushErrMsg(t('aiSidebar.errors.noModel'));
             return;
         }
 
@@ -655,7 +656,7 @@
             if (streamingMessage || streamingThinking) {
                 const message: Message = {
                     role: 'assistant',
-                    content: streamingMessage + '\n\n[生成已中断]',
+                    content: streamingMessage + '\n\n' + t('aiSidebar.messages.interrupted'),
                 };
                 if (streamingThinking) {
                     message.thinking = streamingThinking;
@@ -684,10 +685,10 @@
         navigator.clipboard
             .writeText(markdown)
             .then(() => {
-                pushMsg('对话已复制为 Markdown');
+                pushMsg(t('aiSidebar.success.copyMarkdownSuccess'));
             })
             .catch(err => {
-                pushErrMsg('复制失败');
+                pushErrMsg(t('aiSidebar.errors.copyFailed'));
                 console.error('Copy failed:', err);
             });
     }
@@ -700,9 +701,13 @@
         }
 
         if (hasUnsavedChanges && messages.filter(m => m.role !== 'system').length > 0) {
-            confirm('清空对话', '当前会话有未保存的更改，确定要清空吗？', () => {
-                doClearChat();
-            });
+            confirm(
+                t('aiSidebar.confirm.clearChat.title'),
+                t('aiSidebar.confirm.clearChat.message'),
+                () => {
+                    doClearChat();
+                }
+            );
         } else {
             doClearChat();
         }
@@ -718,7 +723,7 @@
         thinkingCollapsed = {};
         currentSessionId = '';
         hasUnsavedChanges = false;
-        pushMsg('对话已清空');
+        pushMsg(t('aiSidebar.success.clearSuccess'));
     }
 
     // 处理键盘事件
@@ -882,10 +887,10 @@
         navigator.clipboard
             .writeText(textContent)
             .then(() => {
-                pushMsg('消息已复制');
+                pushMsg(t('aiSidebar.success.copySuccess'));
             })
             .catch(err => {
-                pushErrMsg('复制失败');
+                pushErrMsg(t('aiSidebar.errors.copyFailed'));
                 console.error('Copy failed:', err);
             });
     }
@@ -959,7 +964,7 @@
     async function addDocumentToContext(docId: string, docTitle: string) {
         // 检查是否已存在
         if (contextDocuments.find(doc => doc.id === docId)) {
-            pushMsg('该文档已在上下文中');
+            pushMsg(t('aiSidebar.success.documentExists'));
             return;
         }
 
@@ -981,7 +986,7 @@
             }
         } catch (error) {
             console.error('Add document error:', error);
-            pushErrMsg('添加文档失败');
+            pushErrMsg(t('aiSidebar.errors.addDocumentFailed'));
         }
     }
 
@@ -1031,11 +1036,11 @@
             if (blocks && blocks.length > 0) {
                 const block = blocks[0];
                 let docId = targetBlockId;
-                let docTitle = '未命名文档';
+                let docTitle = t('common.untitled');
 
                 // 如果是文档块，直接添加
                 if (block.type === 'd') {
-                    docTitle = block.content || '未命名文档';
+                    docTitle = block.content || t('common.untitled');
                     await addDocumentToContext(docId, docTitle);
                 } else {
                     // 如果是普通块，获取所属文档的标题
@@ -1051,7 +1056,7 @@
             }
         } catch (error) {
             console.error('Add block error:', error);
-            pushErrMsg('添加失败');
+            pushErrMsg(t('aiSidebar.errors.addBlockFailed'));
         }
     }
 
@@ -1059,7 +1064,7 @@
     async function addBlockToContext(blockId: string, blockTitle: string) {
         // 检查是否已存在
         if (contextDocuments.find(doc => doc.id === blockId)) {
-            pushMsg('该内容已在上下文中');
+            pushMsg(t('aiSidebar.success.blockExists'));
             return;
         }
 
@@ -1085,7 +1090,7 @@
             }
         } catch (error) {
             console.error('Add block error:', error);
-            pushErrMsg('添加块失败');
+            pushErrMsg(t('aiSidebar.errors.addBlockContentFailed'));
         }
     }
 
@@ -1100,7 +1105,7 @@
             await openBlock(docId);
         } catch (error) {
             console.error('Open document error:', error);
-            pushErrMsg('打开文档失败');
+            pushErrMsg(t('aiSidebar.errors.openDocumentFailed'));
         }
     }
 
@@ -1186,7 +1191,7 @@
             await plugin.saveData('chat-sessions.json', { sessions });
         } catch (error) {
             console.error('Save sessions error:', error);
-            pushErrMsg('保存会话失败');
+            pushErrMsg(t('aiSidebar.errors.saveSessionFailed'));
         }
     }
 
@@ -1196,12 +1201,12 @@
             const firstMessage = getMessageText(userMessages[0].content);
             return firstMessage.length > 30 ? firstMessage.substring(0, 30) + '...' : firstMessage;
         }
-        return '新对话';
+        return t('aiSidebar.session.new');
     }
 
     async function saveCurrentSession() {
         if (messages.filter(m => m.role !== 'system').length === 0) {
-            pushErrMsg('当前会话为空，无需保存');
+            pushErrMsg(t('aiSidebar.errors.emptySession'));
             return;
         }
 
@@ -1240,8 +1245,8 @@
 
         if (hasUnsavedChanges) {
             confirm(
-                '切换会话',
-                '当前会话有未保存的更改，是否保存？',
+                t('aiSidebar.confirm.switchSession.title'),
+                t('aiSidebar.confirm.switchSession.message'),
                 async () => {
                     await saveCurrentSession();
                     await doLoadSession(sessionId);
@@ -1296,14 +1301,18 @@
     }
 
     async function deleteSession(sessionId: string) {
-        confirm('删除会话', '确定要删除这个会话吗？此操作无法撤销。', async () => {
-            sessions = sessions.filter(s => s.id !== sessionId);
-            await saveSessions();
+        confirm(
+            t('aiSidebar.confirm.deleteSession.title'),
+            t('aiSidebar.confirm.deleteSession.message'),
+            async () => {
+                sessions = sessions.filter(s => s.id !== sessionId);
+                await saveSessions();
 
-            if (currentSessionId === sessionId) {
-                doNewSession();
+                if (currentSessionId === sessionId) {
+                    doNewSession();
+                }
             }
-        });
+        );
     }
 
     // 打开插件设置
@@ -1327,7 +1336,7 @@
             await plugin.saveData('prompts.json', { prompts });
         } catch (error) {
             console.error('Save prompts error:', error);
-            pushErrMsg('保存提示词失败');
+            pushErrMsg(t('aiSidebar.errors.savePromptFailed'));
         }
     }
 
@@ -1348,7 +1357,7 @@
 
     async function saveNewPrompt() {
         if (!newPromptTitle.trim() || !newPromptContent.trim()) {
-            pushErrMsg('标题和内容不能为空');
+            pushErrMsg(t('aiSidebar.errors.emptyPromptContent'));
             return;
         }
 
@@ -1388,10 +1397,14 @@
     }
 
     async function deletePrompt(promptId: string) {
-        confirm('删除提示词', '确定要删除这个提示词吗？', async () => {
-            prompts = prompts.filter(p => p.id !== promptId);
-            await savePrompts();
-        });
+        confirm(
+            t('aiSidebar.confirm.deletePrompt.title'),
+            t('aiSidebar.confirm.deletePrompt.message'),
+            async () => {
+                prompts = prompts.filter(p => p.id !== promptId);
+                await savePrompts();
+            }
+        );
     }
 
     function usePrompt(prompt: Prompt) {
@@ -1427,13 +1440,17 @@
 <div class="ai-sidebar">
     <div class="ai-sidebar__header">
         <h3 class="ai-sidebar__title">
-            AI 助手
+            {t('aiSidebar.title')}
             {#if hasUnsavedChanges}
-                <span class="ai-sidebar__unsaved" title="有未保存的更改">●</span>
+                <span class="ai-sidebar__unsaved" title={t('aiSidebar.unsavedChanges')}>●</span>
             {/if}
         </h3>
         <div class="ai-sidebar__actions">
-            <button class="b3-button b3-button--text" on:click={newSession} title="新建对话">
+            <button
+                class="b3-button b3-button--text"
+                on:click={newSession}
+                title={t('aiSidebar.session.new')}
+            >
                 <svg class="b3-button__icon"><use xlink:href="#iconAdd"></use></svg>
             </button>
             <SessionManager
@@ -1447,14 +1464,22 @@
             <button
                 class="b3-button b3-button--text"
                 on:click={copyAsMarkdown}
-                title="复制全部对话"
+                title={t('aiSidebar.actions.copyAllChat')}
             >
                 <svg class="b3-button__icon"><use xlink:href="#iconCopy"></use></svg>
             </button>
-            <button class="b3-button b3-button--text" on:click={clearChat} title="清空对话">
+            <button
+                class="b3-button b3-button--text"
+                on:click={clearChat}
+                title={t('aiSidebar.actions.clear')}
+            >
                 <svg class="b3-button__icon"><use xlink:href="#iconTrashcan"></use></svg>
             </button>
-            <button class="b3-button b3-button--text" on:click={openSettings} title="打开设置">
+            <button
+                class="b3-button b3-button--text"
+                on:click={openSettings}
+                title={t('aiSidebar.actions.settings')}
+            >
                 <svg class="b3-button__icon"><use xlink:href="#iconSettings"></use></svg>
             </button>
         </div>
@@ -1593,8 +1618,7 @@
         {#if messages.filter(msg => msg.role !== 'system').length === 0 && !isLoading}
             <div class="ai-sidebar__empty">
                 <div class="ai-sidebar__empty-icon">💬</div>
-                <p>开始与 AI 对话吧！</p>
-                <p class="ai-sidebar__empty-hint">Ctrl+Enter 发送消息</p>
+                <p>{t('aiSidebar.empty.greeting')}</p>
             </div>
         {/if}
 
@@ -1602,7 +1626,7 @@
             <button
                 class="ai-sidebar__scroll-to-bottom"
                 on:click={() => scrollToBottom(true)}
-                title="跳转到底部"
+                title={t('aiSidebar.actions.scrollToBottom')}
             >
                 ↓ 最新
             </button>
@@ -1612,7 +1636,7 @@
     <!-- 上下文文档和附件列表 -->
     {#if contextDocuments.length > 0 || currentAttachments.length > 0}
         <div class="ai-sidebar__context-docs">
-            <div class="ai-sidebar__context-docs-title">📎 上下文内容</div>
+            <div class="ai-sidebar__context-docs-title">📎 {t('aiSidebar.context.content')}</div>
             <div class="ai-sidebar__context-docs-list">
                 <!-- 显示上下文文档 -->
                 {#each contextDocuments as doc (doc.id)}
@@ -1682,7 +1706,7 @@
                     bind:value={currentInput}
                     on:keydown={handleKeydown}
                     on:paste={handlePaste}
-                    placeholder="输入消息... (可拖入文档、块或粘贴图片)"
+                    placeholder={t('aiSidebar.input.placeholder')}
                     class="ai-sidebar__input"
                     disabled={isLoading}
                     rows="1"
@@ -1720,7 +1744,7 @@
                 class="b3-button b3-button--text ai-sidebar__upload-btn"
                 on:click={triggerFileUpload}
                 disabled={isUploadingFile || isLoading}
-                title="上传文件（图片或文本文件）"
+                title={t('aiSidebar.actions.upload')}
             >
                 {#if isUploadingFile}
                     <svg class="b3-button__icon ai-sidebar__loading-icon">
@@ -1733,7 +1757,7 @@
             <button
                 class="b3-button b3-button--text ai-sidebar__search-btn"
                 on:click={() => (isSearchDialogOpen = !isSearchDialogOpen)}
-                title="搜索并添加文档"
+                title={t('aiSidebar.actions.search')}
             >
                 <svg class="b3-button__icon"><use xlink:href="#iconSearch"></use></svg>
             </button>
@@ -1741,7 +1765,7 @@
                 <button
                     class="b3-button b3-button--text"
                     on:click={() => (isPromptSelectorOpen = !isPromptSelectorOpen)}
-                    title="提示词"
+                    title={t('aiSidebar.prompt.title')}
                 >
                     <svg class="b3-button__icon"><use xlink:href="#iconList"></use></svg>
                 </button>
@@ -1768,7 +1792,9 @@
                         <svg class="ai-sidebar__prompt-item-icon">
                             <use xlink:href="#iconAdd"></use>
                         </svg>
-                        <span class="ai-sidebar__prompt-item-title">新建提示词</span>
+                        <span class="ai-sidebar__prompt-item-title">
+                            {t('aiSidebar.prompt.new')}
+                        </span>
                     </button>
 
                     {#if prompts.length > 0}
@@ -1803,7 +1829,9 @@
             <div class="ai-sidebar__prompt-dialog-overlay" on:click={closePromptManager}></div>
             <div class="ai-sidebar__prompt-dialog-content">
                 <div class="ai-sidebar__prompt-dialog-header">
-                    <h4>{editingPrompt ? '编辑提示词' : '新建提示词'}</h4>
+                    <h4>
+                        {editingPrompt ? t('aiSidebar.prompt.edit') : t('aiSidebar.prompt.create')}
+                    </h4>
                     <button class="b3-button b3-button--text" on:click={closePromptManager}>
                         <svg class="b3-button__icon"><use xlink:href="#iconClose"></use></svg>
                     </button>
@@ -1815,7 +1843,7 @@
                             <input
                                 type="text"
                                 bind:value={newPromptTitle}
-                                placeholder="输入提示词标题"
+                                placeholder={t('aiSidebar.prompt.titlePlaceholder')}
                                 class="b3-text-field"
                             />
                         </div>
@@ -1897,7 +1925,7 @@
             ></div>
             <div class="ai-sidebar__search-dialog-content">
                 <div class="ai-sidebar__search-dialog-header">
-                    <h4>搜索文档</h4>
+                    <h4>{t('aiSidebar.search.title')}</h4>
                     <button
                         class="b3-button b3-button--text"
                         on:click={() => (isSearchDialogOpen = false)}
@@ -1912,7 +1940,7 @@
                             bind:value={searchKeyword}
                             on:input={autoSearch}
                             on:paste={autoSearch}
-                            placeholder="输入关键词，自动搜索"
+                            placeholder={t('aiSidebar.search.placeholder')}
                             class="b3-text-field"
                         />
                         {#if isSearching}

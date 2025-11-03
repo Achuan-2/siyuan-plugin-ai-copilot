@@ -3,11 +3,13 @@
     import { fetchModels } from '../ai-chat';
     import { pushMsg, pushErrMsg } from '../api';
     import type { ProviderConfig, ModelConfig } from '../defaultSettings';
+    import { t } from '../utils/i18n';
 
     export let providerId: string;
     export let providerName: string;
     export let defaultApiUrl: string = ''; // 默认 API 地址
     export let config: ProviderConfig;
+    export let isCustomProvider: boolean = false; // 是否为自定义平台
 
     const dispatch = createEventDispatcher();
 
@@ -18,11 +20,13 @@
     let showAddModelModal = false;
     let manualModelId = '';
     let manualModelName = '';
+    let isEditingName = false;
+    let editingName = providerName;
 
     // 获取模型列表
     async function loadModels() {
         if (!config.apiKey) {
-            pushErrMsg('请先设置 API Key');
+            pushErrMsg(t('aiSidebar.errors.noApiKey'));
             return;
         }
 
@@ -35,9 +39,9 @@
                 .sort((a, b) => a.id.localeCompare(b.id));
             showModelSearchModal = true;
             searchQuery = '';
-            pushMsg(`成功获取 ${models.length} 个模型`);
+            pushMsg(t('models.fetchSuccess').replace('{count}', models.length.toString()));
         } catch (error) {
-            pushErrMsg(`获取模型失败: ${error.message}`);
+            pushErrMsg(`${t('models.fetchFailed')}: ${error.message}`);
             console.error('Load models error:', error);
         } finally {
             isLoadingModels = false;
@@ -133,11 +137,73 @@
                 m.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
         .sort((a, b) => a.id.localeCompare(b.id));
+
+    // 开始编辑名称
+    function startEditName() {
+        editingName = providerName;
+        isEditingName = true;
+    }
+
+    // 保存名称
+    function saveName() {
+        if (editingName.trim() && editingName !== providerName) {
+            dispatch('rename', { newName: editingName.trim() });
+            providerName = editingName.trim();
+        }
+        isEditingName = false;
+    }
+
+    // 取消编辑
+    function cancelEditName() {
+        editingName = providerName;
+        isEditingName = false;
+    }
+
+    // 同步 providerName 的变化
+    $: if (!isEditingName) {
+        editingName = providerName;
+    }
 </script>
 
 <div class="provider-config">
     <div class="provider-config__header">
-        <h4>{providerName}</h4>
+        {#if isCustomProvider && isEditingName}
+            <div class="provider-name-editor">
+                <input
+                    class="b3-text-field provider-name-input"
+                    type="text"
+                    bind:value={editingName}
+                    on:keydown={e => {
+                        if (e.key === 'Enter') saveName();
+                        if (e.key === 'Escape') cancelEditName();
+                    }}
+                    placeholder="输入平台名称"
+                />
+                <button class="b3-button b3-button--text" on:click={saveName} title="保存">
+                    <svg class="b3-button__icon">
+                        <use xlink:href="#iconCheck"></use>
+                    </svg>
+                </button>
+                <button class="b3-button b3-button--text" on:click={cancelEditName} title="取消">
+                    <svg class="b3-button__icon">
+                        <use xlink:href="#iconClose"></use>
+                    </svg>
+                </button>
+            </div>
+        {:else}
+            <h4>{providerName}</h4>
+            {#if isCustomProvider}
+                <button
+                    class="b3-button b3-button--text edit-name-button"
+                    on:click={startEditName}
+                    title="编辑名称"
+                >
+                    <svg class="b3-button__icon">
+                        <use xlink:href="#iconEdit"></use>
+                    </svg>
+                </button>
+            {/if}
+        {/if}
     </div>
 
     <div class="provider-config__section">
@@ -154,9 +220,9 @@
 
         <div class="b3-label">
             <div class="b3-label__text">
-                API 地址
+                {t('platform.apiUrl')}
                 {#if defaultApiUrl}
-                    <span class="label-hint">（默认: {defaultApiUrl}）</span>
+                    <span class="label-hint">（{t('platform.default')}: {defaultApiUrl}）</span>
                 {/if}
             </div>
             <input
@@ -167,22 +233,22 @@
                 placeholder={defaultApiUrl || '输入自定义 API 地址'}
             />
             <div class="b3-label__text label-description">
-                留空使用默认地址。以 / 结尾忽略 v1 版本，以 # 结尾强制使用输入地址
+                {t('platform.apiUrlHint')}
             </div>
         </div>
 
         <div class="b3-label">
-            <div class="b3-label__text">模型管理</div>
+            <div class="b3-label__text">{t('models.management')}</div>
             <div class="provider-config__model-buttons">
                 <button
                     class="b3-button b3-button--outline"
                     on:click={openModelSearchModal}
                     disabled={isLoadingModels || !config.apiKey}
                 >
-                    {isLoadingModels ? '获取中...' : '搜索并添加模型'}
+                    {isLoadingModels ? t('common.loading') : t('common.searchAndAdd')}
                 </button>
                 <button class="b3-button b3-button--outline" on:click={openAddModelModal}>
-                    + 手动添加模型
+                    {t('models.manualAdd')}
                 </button>
             </div>
         </div>
@@ -193,7 +259,7 @@
         <div class="modal-overlay" on:click={closeModelSearchModal}>
             <div class="modal-content modal-content--large" on:click|stopPropagation>
                 <div class="modal-header">
-                    <h4>搜索并添加模型</h4>
+                    <h4>{t('common.searchAndAdd')}</h4>
                     <button class="modal-close" on:click={closeModelSearchModal}>
                         <svg class="b3-button__icon" style="width: 13px;height: 13px">
                             <use xlink:href="#iconClose"></use>
@@ -202,18 +268,18 @@
                 </div>
                 <div class="modal-body">
                     {#if availableModels.length > 0}
-                        <div class="b3-label">
-                            <div class="b3-label__text">搜索模型</div>
+                        <div>
                             <input
                                 class="b3-text-field fn__flex-1"
+                                style="width: 100%"
                                 type="text"
                                 bind:value={searchQuery}
-                                placeholder="搜索模型..."
+                                placeholder={t('models.searchPlaceholder')}
                             />
                         </div>
 
                         <div class="model-search-results">
-                            {#each filteredModels.slice(0, 20) as model}
+                            {#each filteredModels.slice(0, 200) as model}
                                 <div class="model-search-item">
                                     <div class="model-search-item__info">
                                         <span class="model-search-item__name">{model.name}</span>
@@ -225,25 +291,25 @@
                                         disabled={config.models.some(m => m.id === model.id)}
                                     >
                                         {config.models.some(m => m.id === model.id)
-                                            ? '已添加'
-                                            : '添加'}
+                                            ? t('models.alreadyAdded')
+                                            : t('models.add')}
                                     </button>
                                 </div>
                             {/each}
                             {#if filteredModels.length === 0}
-                                <div class="model-search-empty">没有找到匹配的模型</div>
+                                <div class="model-search-empty">{t('models.noMatch')}</div>
                             {/if}
                         </div>
                     {:else}
                         <div class="loading-models">
                             <div class="loading-spinner"></div>
-                            <span>正在获取模型列表...</span>
+                            <span>{t('models.fetching')}</span>
                         </div>
                     {/if}
                 </div>
                 <div class="modal-footer">
                     <button class="b3-button b3-button--text" on:click={closeModelSearchModal}>
-                        关闭
+                        {t('common.close')}
                     </button>
                 </div>
             </div>
@@ -252,7 +318,7 @@
 
     {#if config.models.length > 0}
         <div class="provider-config__models">
-            <h5>已添加的模型</h5>
+            <h5>{t('models.added')}</h5>
             {#each config.models as model}
                 <div class="model-item">
                     <div class="model-item__header">
@@ -269,7 +335,7 @@
                     </div>
                     <div class="model-item__config">
                         <div class="model-config-item">
-                            <span>温度 (Temperature): {model.temperature}</span>
+                            <span>{t('models.temperature')}: {model.temperature}</span>
                             <input
                                 type="range"
                                 min="0"
@@ -281,7 +347,7 @@
                             />
                         </div>
                         <div class="model-config-item">
-                            <span>最大 Tokens (-1表示不限制)</span>
+                            <span>{t('models.maxTokens')}</span>
                             <input
                                 class="b3-text-field"
                                 type="number"
@@ -293,7 +359,7 @@
                             />
                         </div>
                         <div class="model-config-item">
-                            <span>模型能力</span>
+                            <span>{t('models.capabilities')}</span>
                             <div class="model-capabilities">
                                 <label class="b3-label b3-label--noborder">
                                     <input
@@ -310,7 +376,7 @@
                                             );
                                         }}
                                     />
-                                    <span class="capability-label">思考模式 (Thinking)</span>
+                                    <span class="capability-label">{t('models.thinking')}</span>
                                 </label>
                                 <label class="b3-label b3-label--noborder">
                                     <input
@@ -327,7 +393,7 @@
                                             );
                                         }}
                                     />
-                                    <span class="capability-label">视觉 (Vision)</span>
+                                    <span class="capability-label">{t('models.vision')}</span>
                                 </label>
                             </div>
                         </div>
@@ -342,7 +408,7 @@
         <div class="modal-overlay" on:click={closeAddModelModal}>
             <div class="modal-content" on:click|stopPropagation>
                 <div class="modal-header">
-                    <h4>手动添加模型</h4>
+                    <h4>{t('models.manual')}</h4>
                     <button class="modal-close" on:click={closeAddModelModal}>
                         <svg class="b3-button__icon" style="width: 13px;height: 13px">
                             <use xlink:href="#iconClose"></use>
@@ -373,14 +439,14 @@
                 </div>
                 <div class="modal-footer">
                     <button class="b3-button b3-button--text" on:click={closeAddModelModal}>
-                        取消
+                        {t('common.cancel')}
                     </button>
                     <button
                         class="b3-button b3-button--outline"
                         on:click={addManualModel}
                         disabled={!manualModelId.trim()}
                     >
-                        添加模型
+                        {t('models.addModel')}
                     </button>
                 </div>
             </div>
@@ -398,12 +464,38 @@
 
     .provider-config__header {
         margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
 
         h4 {
             margin: 0;
             font-size: 16px;
             font-weight: 600;
             color: var(--b3-theme-on-background);
+            flex: 1;
+        }
+    }
+
+    .provider-name-editor {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .provider-name-input {
+        flex: 1;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .edit-name-button {
+        opacity: 0.6;
+        transition: opacity 0.2s;
+
+        &:hover {
+            opacity: 1;
         }
     }
 

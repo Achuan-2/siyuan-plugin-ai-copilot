@@ -19,10 +19,10 @@
     }
 
     const builtInProviderNames: Record<string, string> = {
-        gemini: 'Google Gemini',
-        deepseek: 'DeepSeek',
-        openai: 'OpenAI',
-        volcano: '火山引擎',
+        gemini: t('platform.builtIn.gemini'),
+        deepseek: t('platform.builtIn.deepseek'),
+        openai: t('platform.builtIn.openai'),
+        volcano: t('platform.builtIn.volcano'),
     };
 
     // 内置平台的默认 API 地址
@@ -44,6 +44,24 @@
         saveSettings();
     }
 
+    // 处理平台重命名
+    function handleProviderRename(providerId: string, newName: string) {
+        const provider = settings.aiProviders.customProviders.find(p => p.id === providerId);
+        if (provider) {
+            provider.name = newName;
+            // 触发响应式更新
+            settings = {
+                ...settings,
+                aiProviders: {
+                    ...settings.aiProviders,
+                    customProviders: [...settings.aiProviders.customProviders],
+                },
+            };
+            saveSettings();
+            pushMsg(`平台已重命名为: ${newName}`);
+        }
+    }
+
     // 生成自定义平台ID
     function generateCustomPlatformId(): string {
         return `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -52,7 +70,7 @@
     // 添加自定义平台
     function addCustomPlatform() {
         if (!newPlatformName.trim()) {
-            pushErrMsg('请输入平台名称');
+            pushErrMsg(t('platform.nameRequired'));
             return;
         }
 
@@ -64,57 +82,80 @@
             models: [],
         };
 
-        settings.aiProviders.customProviders = [
-            ...settings.aiProviders.customProviders,
-            newPlatform,
-        ];
+        // 使用响应式更新确保 Svelte 检测到变化
+        settings = {
+            ...settings,
+            aiProviders: {
+                ...settings.aiProviders,
+                customProviders: [...settings.aiProviders.customProviders, newPlatform],
+            },
+        };
+
         newPlatformName = '';
         showAddPlatform = false;
         saveSettings();
-        pushMsg(`已添加自定义平台: ${newPlatform.name}`);
+        pushMsg(t('aiSidebar.success.addPromptSuccess') + `: ${newPlatform.name}`);
     }
 
     // 删除平台（内置平台也可删除）
     function removePlatform(providerId: string) {
         const platformName =
             builtInProviderNames[providerId] ||
-            settings.aiProviders.customProviders.find(p => p.id === providerId)?.name ||
-            '未知平台';
+            settings.aiProviders?.customProviders?.find(p => p.id === providerId)?.name ||
+            t('platform.unknown');
 
-        confirm('删除平台', `确定要删除平台 "${platformName}" 吗？`, async () => {
-            // 如果是内置平台，删除其所有配置
-            if (builtInProviderNames[providerId]) {
-                settings.aiProviders[providerId] = {
-                    apiKey: '',
-                    customApiUrl: '',
-                    models: [],
-                };
-            } else {
-                // 如果是自定义平台，从列表中移除
-                settings.aiProviders.customProviders = settings.aiProviders.customProviders.filter(
-                    p => p.id !== providerId
-                );
+        confirm(
+            t('aiSidebar.confirm.deletePlatform.title'),
+            t('aiSidebar.confirm.deletePlatform.message', { platformName }),
+            async () => {
+                // 如果是内置平台，删除其所有配置
+                if (builtInProviderNames[providerId]) {
+                    // 使用响应式更新确保 Svelte 检测到变化
+                    settings = {
+                        ...settings,
+                        aiProviders: {
+                            ...settings.aiProviders,
+                            [providerId]: {
+                                apiKey: '',
+                                customApiUrl: '',
+                                models: [],
+                            },
+                        },
+                    };
+                } else {
+                    // 如果是自定义平台，从列表中移除
+                    // 使用响应式更新确保 Svelte 检测到变化
+                    const filteredProviders = settings.aiProviders.customProviders.filter(
+                        p => p.id !== providerId
+                    );
+                    settings = {
+                        ...settings,
+                        aiProviders: {
+                            ...settings.aiProviders,
+                            customProviders: filteredProviders,
+                        },
+                    };
+                }
+
+                // 如果删除的是当前选中的平台，清空选择
+                if (selectedProviderId === providerId) {
+                    selectedProviderId = '';
+                    settings = {
+                        ...settings,
+                        selectedProviderId: '',
+                        currentProvider: '',
+                        currentModelId: '',
+                    };
+                }
+
+                saveSettings();
+                pushMsg(t('aiSidebar.success.deletePromptSuccess') + `: ${platformName}`);
             }
-
-            // 如果删除的是当前选中的平台，清空选择
-            if (selectedProviderId === providerId) {
-                selectedProviderId = '';
-                settings.selectedProviderId = '';
-                settings.currentProvider = '';
-                settings.currentModelId = '';
-            }
-
-            saveSettings();
-            pushMsg(`已删除平台: ${platformName}`);
-        });
+        );
     }
 
-    // 获取所有平台选项（内置+自定义）
-    function getAllProviderOptions(): Array<{
-        id: string;
-        name: string;
-        type: 'built-in' | 'custom';
-    }> {
+    // 获取所有平台选项（内置+自定义） - 使用响应式语句
+    $: allProviderOptions = (() => {
         const builtIn = Object.keys(builtInProviderNames).map(id => ({
             id,
             name: builtInProviderNames[id],
@@ -130,11 +171,11 @@
         );
 
         return [...builtIn, ...custom];
-    }
+    })();
 
-    // 获取当前选中平台的名称
-    function getSelectedProviderName(): string {
-        if (!selectedProviderId) return '请选择平台';
+    // 获取当前选中平台的名称 - 使用响应式语句
+    $: selectedProviderName = (() => {
+        if (!selectedProviderId) return t('platform.select');
 
         if (builtInProviderNames[selectedProviderId]) {
             return builtInProviderNames[selectedProviderId];
@@ -143,54 +184,53 @@
         const customProvider = settings.aiProviders?.customProviders?.find(
             (p: CustomProviderConfig) => p.id === selectedProviderId
         );
-        return customProvider?.name || '未知平台';
-    }
+        return customProvider?.name || t('platform.unknown');
+    })();
 
     // 保存选中的平台ID
     function handleProviderSelect() {
-        settings.selectedProviderId = selectedProviderId;
-        // 兼容ai-sidebar.svelte，同时保存currentProvider
-        settings.currentProvider = selectedProviderId;
+        // 使用响应式更新确保 Svelte 检测到变化
+        settings = {
+            ...settings,
+            selectedProviderId: selectedProviderId,
+            // 兼容ai-sidebar.svelte，同时保存currentProvider
+            currentProvider: selectedProviderId,
+        };
         saveSettings();
     }
 
     let groups: ISettingGroup[] = [
         {
-            name: 'AI 平台配置',
+            name: t('settings.settingsGroup.systemPrompt'),
             items: [
                 {
                     key: 'aiSystemPrompt',
                     value: settings.aiSystemPrompt,
                     type: 'textarea',
-                    title: '系统提示词',
-                    description: '设置 AI 的角色和行为',
+                    title: t('settings.ai.systemPrompt.title'),
+                    description: t('settings.ai.systemPrompt.description'),
                     direction: 'row',
                     rows: 4,
-                    description: 'You are a helpful AI assistant.',
-                },
-
-                {
-                    key: 'aiProvidersHint',
-                    value: '',
-                    type: 'hint',
-                    title: '平台配置说明',
-                    description:
-                        '为每个AI平台配置API Key，然后获取并添加模型。支持每个平台配置多个模型，每个模型可以设置独立的参数。',
+                    placeholder: t('settings.ai.systemPrompt.placeholder'),
                 },
             ],
         },
         {
-            name: '操作设置',
+            name: t('settings.settingsGroup.platformManagement'),
+            items: [],
+        },
+        {
+            name: t('settings.settingsGroup.operation'),
             items: [
                 {
                     key: 'sendMessageShortcut',
                     value: settings.sendMessageShortcut,
                     type: 'select',
-                    title: '发送消息快捷键',
-                    description: '选择发送消息的快捷键方式',
+                    title: t('settings.sendMessageShortcut.title'),
+                    description: t('settings.sendMessageShortcut.description'),
                     options: {
-                        'ctrl+enter': 'Ctrl + Enter发送，Enter换行',
-                        enter: 'Enter发送，Shift + Enter换行',
+                        'ctrl+enter': t('settings.sendMessageShortcut.options.ctrlEnter'),
+                        enter: t('settings.sendMessageShortcut.options.enter'),
                     },
                 },
             ],
@@ -288,7 +328,7 @@
         settings.selectedProviderId = selectedProviderId;
         await saveSettings();
 
-        console.debug('加载配置文件完成');
+        console.debug(t('common.configComplete'));
     }
 
     function updateGroupItems() {
@@ -314,32 +354,38 @@
                 on:click={() => {
                     focusGroup = group.name;
                 }}
-                on:keydown={() => {}}
+                on:keydown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        focusGroup = group.name;
+                    }
+                }}
+                role="tab"
+                tabindex="0"
             >
                 <span class="b3-list-item__text">{group.name}</span>
             </li>
         {/each}
     </ul>
     <div class="config__tab-wrap">
-        {#if focusGroup === 'AI 平台配置'}
-            <div class="ai-config-panel">
-                <SettingPanel
-                    group={currentGroup?.name || ''}
-                    settingItems={currentGroup?.items || []}
-                    display={true}
-                    on:changed={onChanged}
-                />
-
+        {#if focusGroup === t('settings.settingsGroup.systemPrompt')}
+            <SettingPanel
+                group={currentGroup?.name || ''}
+                settingItems={currentGroup?.items || []}
+                display={true}
+                on:changed={onChanged}
+            />
+        {:else if focusGroup === t('settings.settingsGroup.platformManagement')}
+            <div class="platform-management-panel">
                 <div class="provider-configs">
                     <!-- 统一平台管理面板 -->
                     <div class="unified-platform-manager">
                         <div class="manager-header">
-                            <h5>平台管理</h5>
+                            <h5>{t('platform.management')}</h5>
                             <button
                                 class="b3-button b3-button--outline"
                                 on:click={() => (showAddPlatform = !showAddPlatform)}
                             >
-                                {showAddPlatform ? '取消' : '+ 添加平台'}
+                                {showAddPlatform ? t('platform.cancel') : t('platform.add')}
                             </button>
                         </div>
 
@@ -347,12 +393,12 @@
                         {#if showAddPlatform}
                             <div class="add-platform-form">
                                 <div class="b3-label">
-                                    <div class="b3-label__text">平台名称</div>
+                                    <div class="b3-label__text">{t('platform.name')}</div>
                                     <input
                                         class="b3-text-field fn__flex-1"
                                         type="text"
                                         bind:value={newPlatformName}
-                                        placeholder="例如: Claude API, 本地LLM"
+                                        placeholder={t('platform.namePlaceholder')}
                                         on:keydown={e => e.key === 'Enter' && addCustomPlatform()}
                                     />
                                 </div>
@@ -361,14 +407,14 @@
                                     on:click={addCustomPlatform}
                                     disabled={!newPlatformName.trim()}
                                 >
-                                    确认添加
+                                    {t('platform.confirmAdd')}
                                 </button>
                             </div>
                         {/if}
 
                         <!-- 平台列表 -->
                         <div class="platform-list">
-                            {#each getAllProviderOptions() as platform}
+                            {#each allProviderOptions as platform}
                                 <div
                                     class="platform-item"
                                     class:platform-item--selected={selectedProviderId ===
@@ -377,6 +423,14 @@
                                         selectedProviderId = platform.id;
                                         handleProviderSelect();
                                     }}
+                                    on:keydown={e => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            selectedProviderId = platform.id;
+                                            handleProviderSelect();
+                                        }
+                                    }}
+                                    role="button"
+                                    tabindex="0"
                                 >
                                     <div class="platform-item__info">
                                         <span class="platform-item__name">{platform.name}</span>
@@ -395,7 +449,7 @@
                                     </button>
                                 </div>
                             {/each}
-                            {#if getAllProviderOptions().length === 0}
+                            {#if allProviderOptions.length === 0}
                                 <div class="empty-hint">暂无可用平台</div>
                             {/if}
                         </div>
@@ -407,9 +461,10 @@
                             {#key selectedProviderId}
                                 <ProviderConfigPanel
                                     providerId={selectedProviderId}
-                                    providerName={getSelectedProviderName()}
+                                    providerName={selectedProviderName}
                                     defaultApiUrl={builtInProviderDefaultUrls[selectedProviderId]}
                                     bind:config={settings.aiProviders[selectedProviderId]}
+                                    isCustomProvider={false}
                                     on:change={handleProviderChange}
                                 />
                             {/key}
@@ -422,7 +477,13 @@
                                             providerName={customProvider.name}
                                             defaultApiUrl=""
                                             bind:config={customProvider}
+                                            isCustomProvider={true}
                                             on:change={handleProviderChange}
+                                            on:rename={e =>
+                                                handleProviderRename(
+                                                    customProvider.id,
+                                                    e.detail.newName
+                                                )}
                                         />
                                     {/key}
                                 {/if}
@@ -460,10 +521,11 @@
         padding: 2px;
     }
 
-    .ai-config-panel {
+    .platform-management-panel {
         display: flex;
         flex-direction: column;
         gap: 16px;
+        height: 100%;
     }
 
     .provider-configs {

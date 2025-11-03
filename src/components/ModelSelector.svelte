@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher, onMount, onDestroy } from 'svelte';
     import type { ProviderConfig, CustomProviderConfig } from '../defaultSettings';
+    import { t } from '../utils/i18n';
 
     export let providers: Record<string, any>;
     export let currentProvider: string;
@@ -16,10 +17,11 @@
     }
 
     const builtInProviderNames: Record<string, string> = {
-        gemini: 'Google Gemini',
-        deepseek: 'DeepSeek',
-        openai: 'OpenAI',
-        volcano: '火山引擎',
+        gemini: t('platform.builtIn.gemini'),
+        deepseek: t('platform.builtIn.deepseek'),
+        openai: t('platform.builtIn.openai'),
+        volcano: t('platform.builtIn.volcano'),
+        moonshot: t('platform.builtIn.moonshot'),
     };
 
     let expandedProviders: Set<string> = new Set();
@@ -110,17 +112,17 @@
     // 使用响应式语句自动更新当前模型名称
     $: currentModelName = (() => {
         if (!currentProvider || !currentModelId) {
-            return '请选择模型';
+            return t('models.selectPlaceholder');
         }
         const config = getProviderConfig(currentProvider);
-        if (!config) return '请选择模型';
+        if (!config) return t('models.selectPlaceholder');
         const model = config.models?.find(m => m.id === currentModelId);
-        return model ? model.name : '请选择模型';
+        return model ? model.name : t('models.selectPlaceholder');
     })();
 
     // 根据容器宽度自适应显示模型名称
     $: displayModelName = (() => {
-        if (!currentModelName) return '请选择模型';
+        if (!currentModelName) return t('models.selectPlaceholder');
         // 如果容器宽度小于 200px，只显示模型名的前10个字符
         if (containerWidth > 0 && containerWidth < 200) {
             return currentModelName.length > 10
@@ -170,7 +172,6 @@
         on:click|stopPropagation={() => (isOpen = !isOpen)}
         title={currentModelName}
     >
-        <svg class="b3-button__icon"><use xlink:href="#iconModel"></use></svg>
         <span class="model-selector__current">{displayModelName}</span>
         <svg
             class="b3-button__icon model-selector__arrow"

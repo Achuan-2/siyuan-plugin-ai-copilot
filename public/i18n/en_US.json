@@ -3,6 +3,10 @@
         "settingsPanel": "Settings Panel",
         "settingsGroup": {
             "ai": "AI Settings",
+            "aiPlatform": "AI Platform Configuration",
+            "systemPrompt": "System Prompt",
+            "platformManagement": "Platform Management",
+            "operation": "Operation Settings",
             "group1": "Tab1",
             "group2": "Tab2",
             "reset": "Reset Settings"
@@ -42,6 +46,20 @@
                 "title": "System Prompt",
                 "description": "Set the role and behavior of the AI",
                 "placeholder": "You are a helpful AI assistant."
+            },
+            "providerConfig": {
+                "hint": {
+                    "title": "Platform Configuration Guide",
+                    "description": "Configure API Key for each AI platform, then fetch and add models. Supports multiple models per platform, each with independent parameters."
+                }
+            }
+        },
+        "sendMessageShortcut": {
+            "title": "Send Message Shortcut",
+            "description": "Choose the shortcut key method for sending messages",
+            "options": {
+                "ctrlEnter": "Ctrl + Enter to send, Enter to line break",
+                "enter": "Enter to send, Shift + Enter to line break"
             }
         },
         "textinput": {
@@ -84,5 +102,200 @@
             "confirmMessage": "Are you sure you want to reset all settings to default values? This action cannot be undone.",
             "message": "All settings have been reset to default values"
         }
+    },
+    "aiSidebar": {
+        "title": "Siyuan Copilot",
+        "unsaved": "Unsaved",
+        "unsavedChanges": "Unsaved changes",
+        "empty": {
+            "title": "Start Conversation",
+            "hint": "You can ask questions to the AI assistant, or drag files here for analysis",
+            "greeting": "Start chatting with AI!"
+        },
+        "messages": {
+            "user": "User",
+            "assistant": "Assistant",
+            "system": "System",
+            "thinking": "Thinking Process",
+            "streamingIndicator": "Generating...",
+            "interrupted": "[Generation Interrupted]",
+            "messageCount": "messages"
+        },
+        "actions": {
+            "copy": "Copy",
+            "copyAsMarkdown": "Copy as Markdown",
+            "copyAllChat": "Copy All Chat",
+            "clear": "Clear Chat",
+            "settings": "Open Settings",
+            "upload": "Upload File",
+            "search": "Search and Add Document",
+            "send": "Send",
+            "stop": "Stop",
+            "scrollToBottom": "Scroll to Bottom"
+        },
+        "input": {
+            "placeholder": "Type a message... (drag docs, blocks or paste images)"
+        },
+        "prompt": {
+            "title": "Prompts",
+            "new": "New Prompt",
+            "edit": "Edit Prompt",
+            "create": "Create Prompt",
+            "titlePlaceholder": "Enter prompt title",
+            "contentPlaceholder": "Enter prompt content",
+            "save": "Save",
+            "cancel": "Cancel",
+            "manage": "Manage",
+            "delete": "Delete",
+            "empty": "No prompts yet"
+        },
+        "session": {
+            "title": "Session Management",
+            "history": "Session History",
+            "new": "New Session",
+            "empty": "No session history",
+            "today": "Today",
+            "yesterday": "Yesterday",
+            "daysAgo": "days ago",
+            "delete": "Delete",
+            "save": "Save Session",
+            "load": "Load Session"
+        },
+        "context": {
+            "title": "Context Documents",
+            "content": "Context Content",
+            "addDocument": "Add Document",
+            "remove": "Remove",
+            "open": "Open"
+        },
+        "attachment": {
+            "title": "Attachments",
+            "remove": "Remove Attachment"
+        },
+        "search": {
+            "title": "Search Documents",
+            "placeholder": "Enter keywords for auto search",
+            "add": "Add to Context",
+            "noResults": "No related documents found",
+            "searching": "Searching..."
+        },
+        "errors": {
+            "imageOnly": "Only image files are supported",
+            "imageTooLarge": "Image file too large, maximum 10MB supported",
+            "textAndImageOnly": "Only text files and image files are supported",
+            "fileTooLarge": "File too large, text files max 5MB, images max 10MB",
+            "addImageFailed": "Failed to add image",
+            "addFileFailed": "Failed to add file",
+            "noProvider": "Please configure AI platform in settings first",
+            "noApiKey": "Please configure API Key in settings first",
+            "noModel": "Please select a model",
+            "copyFailed": "Copy failed",
+            "addDocumentFailed": "Failed to add document",
+            "saveSessionFailed": "Failed to save session",
+            "savePromptFailed": "Failed to save prompt",
+            "emptySession": "Current session is empty, no need to save",
+            "emptyPromptContent": "Title and content cannot be empty",
+            "addBlockFailed": "Failed to add",
+            "addBlockContentFailed": "Failed to add block",
+            "openDocumentFailed": "Failed to open document"
+        },
+        "success": {
+            "copySuccess": "Message copied",
+            "copyMarkdownSuccess": "Conversation copied as Markdown",
+            "clearSuccess": "Conversation cleared",
+            "documentExists": "Document already in context",
+            "blockExists": "This content is already in context",
+            "addPromptSuccess": "Custom platform added",
+            "deletePromptSuccess": "Platform deleted"
+        },
+        "confirm": {
+            "clearChat": {
+                "title": "Clear Chat",
+                "message": "Current session has unsaved changes, are you sure to clear?"
+            },
+            "switchSession": {
+                "title": "Switch Session",
+                "message": "Current session has unsaved changes, save them?"
+            },
+            "deleteSession": {
+                "title": "Delete Session",
+                "message": "Are you sure to delete this session? This action cannot be undone."
+            },
+            "deletePrompt": {
+                "title": "Delete Prompt",
+                "message": "Are you sure to delete this prompt?"
+            },
+            "deletePlatform": {
+                "title": "Delete Platform",
+                "message": "Are you sure to delete platform \"{platformName}\"?"
+            }
+        }
+    },
+    "platform": {
+        "builtIn": {
+            "gemini": "Gemini",
+            "deepseek": "DeepSeek",
+            "moonshot": "Moonshot",
+            "openai": "OpenAI",
+            "volcano": "Volcano Engine"
+        },
+        "select": "Please select platform",
+        "unknown": "Unknown platform",
+        "add": "+ Add Platform",
+        "cancel": "Cancel",
+        "namePlaceholder": "e.g.: Claude API, Local LLM",
+        "nameRequired": "Please enter platform name",
+        "management": "Platform Management",
+        "name": "Platform Name",
+        "confirmAdd": "Confirm Add",
+        "type": {
+            "builtin": "Built-in",
+            "custom": "Custom"
+        },
+        "default": "Default",
+        "apiUrl": "API URL",
+        "apiUrlHint": "Leave blank to use default address. Ending with / ignores v1 version, ending with # forces the input address",
+        "builtin": "Built-in",
+        "custom": "Custom"
+    },
+    "common": {
+        "untitled": "Untitled Document",
+        "loading": "Loading...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "remove": "Remove",
+        "close": "Close",
+        "search": "Search",
+        "searchAndAdd": "Search and Add Models",
+        "settings": "Settings",
+        "configComplete": "Configuration loading completed"
+    },
+    "models": {
+        "fetchSuccess": "Successfully fetched {count} models",
+        "fetchFailed": "Failed to fetch models",
+        "addSuccess": "Model added",
+        "removeSuccess": "Model removed",
+        "manual": "Manually Add Model",
+        "manualAdd": "+ Manually Add Model",
+        "id": "Model ID",
+        "name": "Model Name",
+        "temperature": "Temperature",
+        "maxTokens": "Max Tokens (-1 for unlimited)",
+        "searchPlaceholder": "Search models...",
+        "add": "Add",
+        "addModel": "Add Model",
+        "confirmAdd": "Confirm Add",
+        "selectPlaceholder": "Please select a model",
+        "management": "Model Management",
+        "added": "Added Models",
+        "alreadyAdded": "Added",
+        "capabilities": "Model Capabilities",
+        "thinking": "Thinking Mode",
+        "vision": "Vision",
+        "noMatch": "No matching models found",
+        "fetching": "Fetching model list..."
     }
 }

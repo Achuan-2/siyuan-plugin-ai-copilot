@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import { pushMsg, pushErrMsg } from '../api';
+    import { t } from '../utils/i18n';
 
     export let sessions: ChatSession[] = [];
     export let currentSessionId: string = '';
@@ -24,14 +25,18 @@
 
         if (days === 0) {
             return (
-                '今天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+                t('aiSidebar.session.today') +
+                ' ' +
+                date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
             );
         } else if (days === 1) {
             return (
-                '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+                t('aiSidebar.session.yesterday') +
+                ' ' +
+                date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
             );
         } else if (days < 7) {
-            return `${days}天前`;
+            return `${days}${t('aiSidebar.session.daysAgo')}`;
         } else {
             return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
         }
@@ -75,7 +80,7 @@
     <button
         class="session-manager__button b3-button b3-button--text"
         on:click|stopPropagation={() => (isOpen = !isOpen)}
-        title="会话管理"
+        title={t('aiSidebar.session.title')}
     >
         <svg class="b3-button__icon"><use xlink:href="#iconHistory"></use></svg>
     </button>
@@ -83,16 +88,16 @@
     {#if isOpen}
         <div class="session-manager__dropdown">
             <div class="session-manager__header">
-                <h4>会话历史</h4>
+                <h4>{t('aiSidebar.session.history')}</h4>
                 <button class="b3-button b3-button--primary" on:click={newSession}>
                     <svg class="b3-button__icon"><use xlink:href="#iconAdd"></use></svg>
-                    新建会话
+                    {t('aiSidebar.session.new')}
                 </button>
             </div>
 
             <div class="session-manager__list">
                 {#if sortedSessions.length === 0}
-                    <div class="session-manager__empty">暂无历史会话</div>
+                    <div class="session-manager__empty">{t('aiSidebar.session.empty')}</div>
                 {:else}
                     {#each sortedSessions as session}
                         <div
@@ -110,14 +115,15 @@
                                         {formatDate(session.updatedAt)}
                                     </span>
                                     <span class="session-item__count">
-                                        {session.messages.filter(m => m.role !== 'system').length} 条消息
+                                        {session.messages.filter(m => m.role !== 'system').length}
+                                        {t('aiSidebar.messages.messageCount')}
                                     </span>
                                 </div>
                             </div>
                             <button
                                 class="b3-button b3-button--text session-item__delete"
                                 on:click={e => deleteSession(session.id, e)}
-                                title="删除"
+                                title={t('aiSidebar.session.delete')}
                             >
                                 <svg class="b3-button__icon">
                                     <use xlink:href="#iconTrashcan"></use>

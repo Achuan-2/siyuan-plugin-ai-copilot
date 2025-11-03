@@ -3,6 +3,10 @@
         "settingsPanel": "设置面板",
         "settingsGroup": {
             "ai": "AI 设置",
+            "aiPlatform": "AI 平台配置",
+            "systemPrompt": "系统提示词",
+            "platformManagement": "平台管理",
+            "operation": "操作设置",
             "group1": "页签1",
             "group2": "页签2",
             "reset": "重置设置"
@@ -42,6 +46,20 @@
                 "title": "系统提示词",
                 "description": "设置 AI 的角色和行为",
                 "placeholder": "You are a helpful AI assistant."
+            },
+            "providerConfig": {
+                "hint": {
+                    "title": "平台配置说明",
+                    "description": "为每个AI平台配置API Key，然后获取并添加模型。支持每个平台配置多个模型，每个模型可以设置独立的参数。"
+                }
+            }
+        },
+        "sendMessageShortcut": {
+            "title": "发送消息快捷键",
+            "description": "选择发送消息的快捷键方式",
+            "options": {
+                "ctrlEnter": "Ctrl + Enter发送，Enter换行",
+                "enter": "Enter发送，Shift + Enter换行"
             }
         },
         "textinput": {
@@ -83,5 +101,200 @@
             "confirmMessage": "确定要将所有设置重置为默认值吗？此操作无法撤销。",
             "message": "已重置所有设置为默认值"
         }
+    },
+    "aiSidebar": {
+        "title": "Siyuan Copilot",
+        "unsaved": "未保存",
+        "unsavedChanges": "有未保存的更改",
+        "empty": {
+            "title": "开始对话",
+            "hint": "你可以向AI助手提问，或者拖拽文件到这里进行分析",
+            "greeting": "开始与 AI 对话吧！"
+        },
+        "messages": {
+            "user": "用户",
+            "assistant": "助手",
+            "system": "系统",
+            "thinking": "思考过程",
+            "streamingIndicator": "正在生成...",
+            "interrupted": "[生成已中断]",
+            "messageCount": "条消息"
+        },
+        "actions": {
+            "copy": "复制",
+            "copyAsMarkdown": "复制为 Markdown",
+            "copyAllChat": "复制全部对话",
+            "clear": "清空对话",
+            "settings": "打开设置",
+            "upload": "上传文件",
+            "search": "搜索并添加文档",
+            "send": "发送",
+            "stop": "停止",
+            "scrollToBottom": "回到底部"
+        },
+        "input": {
+            "placeholder": "输入消息... (可拖入文档、块或粘贴图片)"
+        },
+        "prompt": {
+            "title": "提示词",
+            "new": "新建提示词",
+            "edit": "编辑提示词",
+            "create": "新建提示词",
+            "titlePlaceholder": "输入提示词标题",
+            "contentPlaceholder": "输入提示词内容",
+            "save": "保存",
+            "cancel": "取消",
+            "manage": "管理",
+            "delete": "删除",
+            "empty": "暂无提示词"
+        },
+        "session": {
+            "title": "会话管理",
+            "history": "会话历史",
+            "new": "新建会话",
+            "empty": "暂无历史会话",
+            "today": "今天",
+            "yesterday": "昨天",
+            "daysAgo": "天前",
+            "delete": "删除",
+            "save": "保存会话",
+            "load": "加载会话"
+        },
+        "context": {
+            "title": "上下文文档",
+            "content": "上下文内容",
+            "addDocument": "添加文档",
+            "remove": "移除",
+            "open": "打开"
+        },
+        "attachment": {
+            "title": "附件",
+            "remove": "移除附件"
+        },
+        "search": {
+            "title": "搜索文档",
+            "placeholder": "输入关键词，自动搜索",
+            "add": "添加到上下文",
+            "noResults": "未找到相关文档",
+            "searching": "搜索中..."
+        },
+        "errors": {
+            "imageOnly": "只支持图片文件",
+            "imageTooLarge": "图片文件过大，最大支持 10MB",
+            "textAndImageOnly": "只支持文本文件和图片文件",
+            "fileTooLarge": "文件过大，文本文件最大 5MB，图片最大 10MB",
+            "addImageFailed": "添加图片失败",
+            "addFileFailed": "添加文件失败",
+            "noProvider": "请先在设置中配置AI平台",
+            "noApiKey": "请先在设置中配置 API Key",
+            "noModel": "请选择一个模型",
+            "copyFailed": "复制失败",
+            "addDocumentFailed": "添加文档失败",
+            "saveSessionFailed": "保存会话失败",
+            "savePromptFailed": "保存提示词失败",
+            "emptySession": "当前会话为空，无需保存",
+            "emptyPromptContent": "标题和内容不能为空",
+            "addBlockFailed": "添加失败",
+            "addBlockContentFailed": "添加块失败",
+            "openDocumentFailed": "打开文档失败"
+        },
+        "success": {
+            "copySuccess": "消息已复制",
+            "copyMarkdownSuccess": "对话已复制为 Markdown",
+            "clearSuccess": "对话已清空",
+            "documentExists": "该文档已在上下文中",
+            "blockExists": "该内容已在上下文中",
+            "addPromptSuccess": "已添加自定义平台",
+            "deletePromptSuccess": "已删除平台"
+        },
+        "confirm": {
+            "clearChat": {
+                "title": "清空对话",
+                "message": "当前会话有未保存的更改，确定要清空吗？"
+            },
+            "switchSession": {
+                "title": "切换会话",
+                "message": "当前会话有未保存的更改，是否保存？"
+            },
+            "deleteSession": {
+                "title": "删除会话",
+                "message": "确定要删除这个会话吗？此操作无法撤销。"
+            },
+            "deletePrompt": {
+                "title": "删除提示词",
+                "message": "确定要删除这个提示词吗？"
+            },
+            "deletePlatform": {
+                "title": "删除平台",
+                "message": "确定要删除平台 \"{platformName}\" 吗？"
+            }
+        }
+    },
+    "platform": {
+        "builtIn": {
+            "gemini": "Gemini",
+            "deepseek": "DeepSeek",
+            "moonshot": "月之暗面",
+            "openai": "OpenAI",
+            "volcano": "火山引擎"
+        },
+        "select": "请选择平台",
+        "unknown": "未知平台",
+        "add": "+ 添加平台",
+        "cancel": "取消",
+        "namePlaceholder": "例如: Claude API, 本地LLM",
+        "nameRequired": "请输入平台名称",
+        "management": "平台管理",
+        "name": "平台名称",
+        "confirmAdd": "确认添加",
+        "type": {
+            "builtin": "内置",
+            "custom": "自定义"
+        },
+        "default": "默认",
+        "apiUrl": "API 地址",
+        "apiUrlHint": "留空使用默认地址。以 / 结尾忽略 v1 版本，以 # 结尾强制使用输入地址",
+        "builtin": "内置",
+        "custom": "自定义"
+    },
+    "common": {
+        "untitled": "未命名文档",
+        "loading": "加载中...",
+        "save": "保存",
+        "cancel": "取消",
+        "delete": "删除",
+        "edit": "编辑",
+        "add": "添加",
+        "remove": "移除",
+        "close": "关闭",
+        "search": "搜索",
+        "searchAndAdd": "搜索并添加模型",
+        "settings": "设置",
+        "configComplete": "加载配置文件完成"
+    },
+    "models": {
+        "fetchSuccess": "成功获取 {count} 个模型",
+        "fetchFailed": "获取模型失败",
+        "addSuccess": "模型已添加",
+        "removeSuccess": "模型已移除",
+        "manual": "手动添加模型",
+        "manualAdd": "+ 手动添加模型",
+        "id": "模型ID",
+        "name": "模型名称",
+        "temperature": "温度 (Temperature)",
+        "maxTokens": "最大 Tokens (-1表示不限制)",
+        "searchPlaceholder": "搜索模型...",
+        "add": "添加",
+        "addModel": "添加模型",
+        "confirmAdd": "确认添加",
+        "selectPlaceholder": "请选择模型",
+        "management": "模型管理",
+        "added": "已添加的模型",
+        "alreadyAdded": "已添加",
+        "capabilities": "模型能力",
+        "thinking": "思考模式 (Thinking)",
+        "vision": "视觉",
+        "noMatch": "没有找到匹配的模型",
+        "fetching": "正在获取模型列表..."
     }
 }
