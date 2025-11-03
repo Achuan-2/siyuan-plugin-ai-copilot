@@ -1847,7 +1847,7 @@
                 >
                     <div class="ai-message__header">
                         <span class="ai-message__role">
-                            {message.role === 'user' ? '👤 You' : '🤖 AI'}
+                            {message.role === 'user' ? '👤 User' : '🤖 AI'}
                         </span>
                     </div>
 
