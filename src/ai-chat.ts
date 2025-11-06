@@ -222,7 +222,7 @@ async function chatOpenAIFormat(
     apiKey: string,
     options: ChatOptions
 ): Promise<void> {
-    
+
 
     // 转换消息格式以支持多模态
     const formattedMessages = options.messages.map(msg => ({
