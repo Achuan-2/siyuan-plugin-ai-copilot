@@ -1,4 +1,3 @@
-# AI Sidebar Plugin
 
 An AI assistant plugin for SiYuan Note, providing rich Q&A and editing features based on SiYuan Note content.
 
