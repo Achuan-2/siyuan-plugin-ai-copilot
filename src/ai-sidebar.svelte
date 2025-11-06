@@ -1738,8 +1738,18 @@
         if (type.startsWith(Constants.SIYUAN_DROP_GUTTER)) {
             const meta = type.replace(Constants.SIYUAN_DROP_GUTTER, '');
             const info = meta.split(Constants.ZWSP);
-            const nodeId = info[2];
-            await addItemByBlockId(nodeId, false);
+            console.log('Dropped gutter info:', info);
+            const blockIdStr = info[2];
+            const blockIds = blockIdStr
+                .split(',')
+                .map(id => id.trim())
+                .filter(id => id && id !== '/');
+            // 批量添加到上下文
+            if (blockIds.length > 0) {
+                for (const blockid of blockIds) {
+                    await addItemByBlockId(blockid, false);
+                }
+            }
         } else if (type.startsWith(Constants.SIYUAN_DROP_FILE)) {
             // 支持单选和多选拖放
             const ele: HTMLElement = (window as any).siyuan?.dragElement;
