@@ -165,6 +165,7 @@
             "editMessage": "Edit Message",
             "deleteMessage": "Delete Message",
             "regenerate": "Regenerate",
+            "resend": "Resend",
             "save": "Save",
             "cancel": "Cancel",
             "applyEdit": "Apply Edit",
@@ -257,6 +258,7 @@
             "openDocumentFailed": "Failed to open document",
             "generating": "Generating in progress, please wait...",
             "noUserMessage": "No user message found",
+            "noMessage": "Message not found",
             "requestFailed": "AI Request Failed",
             "applyEditFailed": "Failed to apply edit",
             "getBlockFailed": "Failed to get block content"

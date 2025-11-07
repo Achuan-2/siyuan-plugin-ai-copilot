@@ -64,6 +64,13 @@
     let editingMessageContent = '';
     let isEditDialogOpen = false;
 
+    // 右键菜单状态
+    let contextMenuVisible = false;
+    let contextMenuX = 0;
+    let contextMenuY = 0;
+    let contextMenuMessageIndex: number | null = null;
+    let contextMenuMessageType: 'user' | 'assistant' | null = null;
+
     // 附件管理
     let currentAttachments: MessageAttachment[] = [];
     let isUploadingFile = false;
@@ -208,6 +215,8 @@
 
         // 添加全局点击事件监听器
         document.addEventListener('click', handleClickOutside);
+        // 添加全局滚动事件监听器以关闭右键菜单
+        document.addEventListener('scroll', closeContextMenu, true);
     });
 
     onDestroy(async () => {
@@ -218,6 +227,8 @@
 
         // 移除全局点击事件监听器
         document.removeEventListener('click', handleClickOutside);
+        // 移除全局滚动事件监听器
+        document.removeEventListener('scroll', closeContextMenu, true);
 
         // 保存工具配置
         if (isToolConfigLoaded) {
@@ -1405,23 +1416,34 @@
             abortController.abort();
             // 如果有已生成的部分，将其保存为消息
             if (streamingMessage || streamingThinking) {
+                // 先保存到临时变量
+                const tempStreamingMessage = streamingMessage;
+                const tempStreamingThinking = streamingThinking;
+
+                // 立即清空流式消息和状态，避免重复渲染
+                streamingMessage = '';
+                streamingThinking = '';
+                isThinkingPhase = false;
+                isLoading = false;
+
                 // 转换 LaTeX 数学公式格式为 Markdown 格式
-                const convertedMessage = convertLatexToMarkdown(streamingMessage);
+                const convertedMessage = convertLatexToMarkdown(tempStreamingMessage);
 
                 const message: Message = {
                     role: 'assistant',
                     content: convertedMessage + '\n\n' + t('aiSidebar.messages.interrupted'),
                 };
-                if (streamingThinking) {
-                    message.thinking = streamingThinking;
+                if (tempStreamingThinking) {
+                    message.thinking = tempStreamingThinking;
                 }
                 messages = [...messages, message];
                 hasUnsavedChanges = true;
+            } else {
+                streamingMessage = '';
+                streamingThinking = '';
+                isThinkingPhase = false;
+                isLoading = false;
             }
-            streamingMessage = '';
-            streamingThinking = '';
-            isThinkingPhase = false;
-            isLoading = false;
             abortController = null;
         }
     }
@@ -1859,9 +1881,53 @@
     }
 
     // 处理消息框右键菜单
-    function handleContextMenu(event: MouseEvent, content: string | MessageContent[]) {
+    function handleContextMenu(
+        event: MouseEvent,
+        messageIndex: number,
+        messageType: 'user' | 'assistant'
+    ) {
         event.preventDefault();
-        copyMessage(content);
+        event.stopPropagation();
+
+        // 设置菜单位置
+        contextMenuX = event.clientX;
+        contextMenuY = event.clientY;
+        contextMenuMessageIndex = messageIndex;
+        contextMenuMessageType = messageType;
+        contextMenuVisible = true;
+    }
+
+    // 关闭右键菜单
+    function closeContextMenu() {
+        contextMenuVisible = false;
+        contextMenuMessageIndex = null;
+        contextMenuMessageType = null;
+    }
+
+    // 处理右键菜单项点击
+    function handleContextMenuAction(action: 'copy' | 'edit' | 'delete' | 'regenerate') {
+        if (contextMenuMessageIndex === null) return;
+
+        const messageIndex = contextMenuMessageIndex;
+        closeContextMenu();
+
+        switch (action) {
+            case 'copy':
+                const message = messages[messageIndex];
+                if (message) {
+                    copyMessage(message.content);
+                }
+                break;
+            case 'edit':
+                startEditMessage(messageIndex);
+                break;
+            case 'delete':
+                deleteMessage(messageIndex);
+                break;
+            case 'regenerate':
+                regenerateMessage(messageIndex);
+                break;
+        }
     }
 
     // 搜索文档
@@ -2499,8 +2565,14 @@
 
     // 点击外部关闭提示词选择器
     function handleClickOutside(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+
+        // 关闭右键菜单
+        if (contextMenuVisible && !target.closest('.ai-sidebar__context-menu')) {
+            closeContextMenu();
+        }
+
         if (isPromptSelectorOpen) {
-            const target = event.target as HTMLElement;
             const selector = document.querySelector('.ai-sidebar__prompt-selector');
             const buttons = document.querySelectorAll('.ai-sidebar__prompt-actions button');
 
@@ -2874,9 +2946,32 @@
             return;
         }
 
-        // 删除从此消息开始的所有后续消息
-        messages = messages.slice(0, index);
-        hasUnsavedChanges = true;
+        const targetMessage = messages[index];
+        if (!targetMessage) {
+            pushErrMsg(t('aiSidebar.errors.noMessage'));
+            return;
+        }
+
+        // 如果是用户消息，删除该消息及之后的所有消息，然后重新发送
+        // 如果是AI消息，删除该消息及之后的所有消息，然后重新请求
+        if (targetMessage.role === 'user') {
+            // 删除该用户消息及之后的所有消息
+            messages = messages.slice(0, index);
+            hasUnsavedChanges = true;
+
+            // 重新添加该用户消息并发送
+            const userMessage: Message = {
+                role: 'user',
+                content: targetMessage.content,
+                attachments: targetMessage.attachments,
+                contextDocuments: targetMessage.contextDocuments,
+            };
+            messages = [...messages, userMessage];
+        } else {
+            // AI消息：删除从此消息开始的所有后续消息
+            messages = messages.slice(0, index);
+            hasUnsavedChanges = true;
+        }
 
         // 获取最后一条用户消息
         const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
@@ -3361,7 +3456,7 @@
             {@const messageIndex = group.startIndex}
             <div
                 class="ai-message ai-message--{group.type}"
-                on:contextmenu={e => handleContextMenu(e, firstMessage.content)}
+                on:contextmenu={e => handleContextMenu(e, messageIndex, group.type)}
             >
                 <div class="ai-message__header">
                     <span class="ai-message__role">
@@ -3719,7 +3814,10 @@
         {#if isLoading && (streamingMessage || streamingThinking)}
             <div
                 class="ai-message ai-message--assistant ai-message--streaming"
-                on:contextmenu={e => handleContextMenu(e, streamingMessage)}
+                on:contextmenu={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
             >
                 <div class="ai-message__header">
                     <span class="ai-message__role">🤖 AI</span>
@@ -4385,6 +4483,48 @@
                     </button>
                 </div>
             </div>
+        </div>
+    {/if}
+
+    <!-- 右键菜单 -->
+    {#if contextMenuVisible}
+        <div
+            class="ai-sidebar__context-menu"
+            style="left: {contextMenuX}px; top: {contextMenuY}px;"
+        >
+            <button
+                class="ai-sidebar__context-menu-item"
+                on:click={() => handleContextMenuAction('copy')}
+            >
+                <svg class="b3-button__icon"><use xlink:href="#iconCopy"></use></svg>
+                <span>{t('aiSidebar.actions.copyMessage')}</span>
+            </button>
+            <button
+                class="ai-sidebar__context-menu-item"
+                on:click={() => handleContextMenuAction('edit')}
+            >
+                <svg class="b3-button__icon"><use xlink:href="#iconEdit"></use></svg>
+                <span>{t('aiSidebar.actions.editMessage')}</span>
+            </button>
+            <button
+                class="ai-sidebar__context-menu-item"
+                on:click={() => handleContextMenuAction('delete')}
+            >
+                <svg class="b3-button__icon"><use xlink:href="#iconTrashcan"></use></svg>
+                <span>{t('aiSidebar.actions.deleteMessage')}</span>
+            </button>
+            <div class="ai-sidebar__context-menu-divider"></div>
+            <button
+                class="ai-sidebar__context-menu-item"
+                on:click={() => handleContextMenuAction('regenerate')}
+            >
+                <svg class="b3-button__icon"><use xlink:href="#iconRefresh"></use></svg>
+                <span>
+                    {contextMenuMessageType === 'user'
+                        ? t('aiSidebar.actions.resend')
+                        : t('aiSidebar.actions.regenerate')}
+                </span>
+            </button>
         </div>
     {/if}
 
@@ -6280,6 +6420,55 @@
         .b3-button {
             min-width: 100px;
         }
+    }
+
+    // 右键菜单样式
+    .ai-sidebar__context-menu {
+        position: fixed;
+        z-index: 10000;
+        min-width: 160px;
+        background: var(--b3-theme-surface);
+        border: 1px solid var(--b3-border-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 4px;
+        animation: fadeIn 0.15s ease-out;
+    }
+
+    .ai-sidebar__context-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: var(--b3-theme-on-surface);
+        font-size: 14px;
+        text-align: left;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.2s;
+
+        &:hover {
+            background: var(--b3-theme-background);
+        }
+
+        .b3-button__icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        span {
+            flex: 1;
+        }
+    }
+
+    .ai-sidebar__context-menu-divider {
+        height: 1px;
+        margin: 4px 0;
+        background: var(--b3-border-color);
     }
 
     // 响应式布局

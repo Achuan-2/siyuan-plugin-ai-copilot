@@ -164,6 +164,7 @@
             "editMessage": "编辑消息",
             "deleteMessage": "删除消息",
             "regenerate": "重新生成",
+            "resend": "重新发送",
             "save": "保存",
             "cancel": "取消",
             "applyEdit": "应用编辑",
@@ -256,6 +257,7 @@
             "openDocumentFailed": "打开文档失败",
             "generating": "正在生成中，请稍候...",
             "noUserMessage": "没有找到用户消息",
+            "noMessage": "消息不存在",
             "requestFailed": "AI 请求失败",
             "applyEditFailed": "应用编辑失败",
             "getBlockFailed": "获取块内容失败"
