@@ -213,7 +213,25 @@ export async function fetchModels(
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+            // 尝试读取错误响应体中的详细错误信息
+            let errorMessage = `Failed to fetch models: ${response.status} ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                // 尝试提取常见的错误消息字段
+                const detailMsg = errorData.error?.message || errorData.message || errorData.error || JSON.stringify(errorData);
+                errorMessage += `\n\n${detailMsg}`;
+            } catch (e) {
+                // 如果无法解析 JSON，尝试读取文本
+                try {
+                    const errorText = await response.text();
+                    if (errorText) {
+                        errorMessage += `\n\n${errorText}`;
+                    }
+                } catch (textError) {
+                    // 忽略文本读取错误
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
@@ -304,7 +322,25 @@ async function chatOpenAIFormat(
         });
 
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            // 尝试读取错误响应体中的详细错误信息
+            let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                // 尝试提取常见的错误消息字段
+                const detailMsg = errorData.error?.message || errorData.message || errorData.error || JSON.stringify(errorData);
+                errorMessage += `\n\n${detailMsg}`;
+            } catch (e) {
+                // 如果无法解析 JSON，尝试读取文本
+                try {
+                    const errorText = await response.text();
+                    if (errorText) {
+                        errorMessage += `\n\n${errorText}`;
+                    }
+                } catch (textError) {
+                    // 忽略文本读取错误
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         if (options.stream !== false && response.body) {
@@ -406,7 +442,25 @@ async function chatGeminiFormat(
         });
 
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            // 尝试读取错误响应体中的详细错误信息
+            let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                // 尝试提取常见的错误消息字段
+                const detailMsg = errorData.error?.message || errorData.message || errorData.error || JSON.stringify(errorData);
+                errorMessage += `\n\n${detailMsg}`;
+            } catch (e) {
+                // 如果无法解析 JSON，尝试读取文本
+                try {
+                    const errorText = await response.text();
+                    if (errorText) {
+                        errorMessage += `\n\n${errorText}`;
+                    }
+                } catch (textError) {
+                    // 忽略文本读取错误
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         if (response.body) {
