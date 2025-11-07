@@ -919,7 +919,7 @@
             multiModelResponses: multiModelResponses.map((response, i) => ({
                 ...response,
                 isSelected: i === index, // 标记哪个被选择
-                modelName: i === index ? ' ✅'+ response.modelName : response.modelName, // 选择的模型名添加✅
+                modelName: i === index ? ' ✅' + response.modelName : response.modelName, // 选择的模型名添加✅
             })),
         };
 
@@ -1923,7 +1923,7 @@
                         isSelected: i === firstSuccessIndex,
                         modelName:
                             i === firstSuccessIndex
-                                ? '✅'+response.modelName
+                                ? '✅' + response.modelName
                                 : response.modelName,
                     })),
                 };
@@ -2317,6 +2317,54 @@
         });
     }
 
+    // 为思源块引用链接添加点击事件
+    function setupBlockRefLinks(element: HTMLElement) {
+        if (!element) return;
+
+        tick().then(() => {
+            try {
+                // 查找所有思源块引用链接 span[data-href^="siyuan://blocks/"]
+                const blockRefLinks = element.querySelectorAll(
+                    'span[data-href^="siyuan://blocks/"]'
+                );
+
+                blockRefLinks.forEach((link: HTMLElement) => {
+                    // 检查是否已经添加过监听器
+                    if (link.hasAttribute('data-block-ref-listener')) {
+                        return;
+                    }
+
+                    // 标记已添加监听器
+                    link.setAttribute('data-block-ref-listener', 'true');
+                    link.style.cursor = 'pointer';
+
+                    // 添加点击事件监听器
+                    link.addEventListener('click', async (event: Event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        const href = link.getAttribute('data-href');
+                        if (!href) return;
+
+                        // 提取块ID：siyuan://blocks/20251107164532-zmaydt9
+                        const match = href.match(/siyuan:\/\/blocks\/(.+)/);
+                        if (match && match[1]) {
+                            const blockId = match[1];
+                            try {
+                                await openBlock(blockId);
+                            } catch (error) {
+                                console.error('Open block error:', error);
+                                pushErrMsg(`打开块失败: ${(error as Error).message}`);
+                            }
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Setup block ref links error:', error);
+            }
+        });
+    }
+
     // 监听消息变化，高亮代码块和渲染数学公式
     $: {
         if (messages.length > 0 || streamingMessage) {
@@ -2325,6 +2373,7 @@
                     highlightCodeBlocks(messagesContainer);
                     renderMathFormulas(messagesContainer);
                     cleanupCodeBlocks(messagesContainer);
+                    setupBlockRefLinks(messagesContainer);
                 }
             });
         }
@@ -2355,13 +2404,13 @@
         // 检查选区是否在消息容器内
         const range = selection.getRangeAt(0);
         const container = range.commonAncestorContainer;
-        
+
         // 查找最近的 .protyle-wysiwyg 父元素
-        let element: HTMLElement | null = 
-            container.nodeType === Node.ELEMENT_NODE 
-                ? container as HTMLElement 
+        let element: HTMLElement | null =
+            container.nodeType === Node.ELEMENT_NODE
+                ? (container as HTMLElement)
                 : container.parentElement;
-        
+
         let isInMessageContent = false;
         while (element) {
             if (element.classList && element.classList.contains('protyle-wysiwyg')) {
@@ -2392,7 +2441,7 @@
 
                 // 将Markdown写入剪贴板
                 event.clipboardData?.setData('text/plain', markdown);
-                
+
                 console.log('Copied as Markdown:', markdown);
             } else {
                 // 降级：如果Lute不可用，使用纯文本
@@ -2907,7 +2956,7 @@
                         isSelected: i === firstSuccessIndex,
                         modelName:
                             i === firstSuccessIndex
-                                ? '✅'+response.modelName
+                                ? '✅' + response.modelName
                                 : response.modelName,
                     })),
                 };
