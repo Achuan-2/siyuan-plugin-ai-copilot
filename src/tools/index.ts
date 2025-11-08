@@ -77,9 +77,7 @@ export const AVAILABLE_TOOLS: Tool[] = [
         type: 'function',
         function: {
             name: 'siyuan_sql_query',
-            description: `# siyuan_sql_query
-
-执行思源笔记SQL查询的工具。
+            description: `执行思源笔记SQL查询的工具。
 
 ## 何时使用
 - 需要搜索、统计或分析笔记内容
@@ -181,9 +179,7 @@ SELECT * FROM blocks WHERE tag LIKE '%标签名%';
         type: 'function',
         function: {
             name: 'siyuan_update_block',
-            description: `# siyuan_update_block
-
-更新思源笔记中已存在块的工具。
+            description: `更新思源笔记中已存在块的工具。
 
 ## 何时使用
 - 需要修改现有笔记内容
@@ -235,9 +231,7 @@ SELECT * FROM blocks WHERE tag LIKE '%标签名%';
         type: 'function',
         function: {
             name: 'siyuan_insert_block',
-            description: `# siyuan_insert_block
-
-在思源笔记中插入新块的工具。
+            description: `在思源笔记中插入新块的工具。
 
 ## 何时使用
 - 用户要求添加新内容到笔记
@@ -301,9 +295,7 @@ SELECT * FROM blocks WHERE tag LIKE '%标签名%';
         type: 'function',
         function: {
             name: 'siyuan_get_block_content',
-            description: `# siyuan_get_block_content
-
-获取思源笔记块的详细内容的工具。
+            description: `获取思源笔记块的详细内容的工具。
 
 ## 何时使用
 - 需要查看特定块的完整内容
@@ -353,9 +345,7 @@ SELECT * FROM blocks WHERE tag LIKE '%标签名%';
         type: 'function',
         function: {
             name: 'siyuan_create_document',
-            description: `# siyuan_create_document
-
-在思源笔记中创建新文档的工具。
+            description: `在思源笔记中创建新文档的工具。
 
 ## 何时使用
 - 用户要求创建新笔记
@@ -424,9 +414,7 @@ siyuan_create_document({
         type: 'function',
         function: {
             name: 'siyuan_list_notebooks',
-            description: `# siyuan_list_notebooks
-
-获取所有笔记本列表的工具。
+            description: `获取所有笔记本列表的工具。
 
 ## 何时使用
 - 需要查看系统中有哪些笔记本
@@ -462,9 +450,7 @@ siyuan_create_document({
         type: 'function',
         function: {
             name: 'siyuan_create_notebook',
-            description: `# siyuan_create_notebook
-
-创建新笔记本的工具。
+            description: `创建新笔记本的工具。
 
 ## 何时使用
 - 用户要求创建新的笔记本
@@ -513,9 +499,7 @@ siyuan_create_notebook({
         type: 'function',
         function: {
             name: 'siyuan_rename_document',
-            description: `# siyuan_rename_document
-
-重命名思源笔记文档的工具。
+            description: `重命名思源笔记文档的工具。
 
 ## 何时使用
 - 用户要求修改文档标题
@@ -569,9 +553,7 @@ siyuan_rename_document({
         type: 'function',
         function: {
             name: 'siyuan_move_documents',
-            description: `# siyuan_move_documents
-
-移动思源笔记文档到指定位置的工具。
+            description: `移动思源笔记文档到指定位置的工具。
 
 ## 何时使用
 - 用户要求移动文档到其他文档下或其他笔记本
