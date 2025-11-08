@@ -102,6 +102,32 @@
         dispatch('toggleEnable', enableMultiModel);
     }
 
+    // 获取模型名称
+    function getModelName(provider: string, modelId: string): string {
+        let providerConfig: any = null;
+
+        // 查找内置平台
+        if (providers[provider] && !Array.isArray(providers[provider])) {
+            providerConfig = providers[provider];
+        } else if (providers.customProviders && Array.isArray(providers.customProviders)) {
+            // 查找自定义平台
+            providerConfig = providers.customProviders.find((p: any) => p.id === provider);
+        }
+
+        if (providerConfig && providerConfig.models) {
+            const model = providerConfig.models.find((m: any) => m.id === modelId);
+            return model ? model.name : modelId;
+        }
+
+        return modelId;
+    }
+
+    // 获取已选择模型的名称列表
+    function getSelectedModelNames(): string {
+        if (selectedModels.length === 0) return '';
+        return selectedModels.map(m => getModelName(m.provider, m.modelId)).join('，');
+    }
+
     function closeOnOutsideClick(event: MouseEvent) {
         const target = event.target as HTMLElement;
         if (!target.closest('.multi-model-selector')) {
@@ -164,7 +190,11 @@
 
             <div class="multi-model-selector__count-header">
                 <div class="multi-model-selector__count">
-                    {t('multiModel.selected')}: {selectedModels.length}
+                    {#if selectedModels.length > 0}
+                        {t('multiModel.selected')}: {selectedModels.length} ({getSelectedModelNames()})
+                    {:else}
+                        {t('multiModel.selected')}: {selectedModels.length}
+                    {/if}
                 </div>
             </div>
 
