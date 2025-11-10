@@ -22,6 +22,7 @@
         openai: t('platform.builtIn.openai'),
         volcano: t('platform.builtIn.volcano'),
         moonshot: t('platform.builtIn.moonshot'),
+        v3: t('platform.builtIn.v3'),
     };
 
     let expandedProviders: Set<string> = new Set();
