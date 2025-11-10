@@ -649,6 +649,14 @@
         }
     }
 
+    // 滚动到顶部
+    async function scrollToTop() {
+        await tick();
+        if (messagesContainer) {
+            messagesContainer.scrollTop = 0;
+        }
+    }
+
     // 切换模型
     function handleModelSelect(event: CustomEvent<{ provider: string; modelId: string }>) {
         const { provider, modelId } = event.detail;
@@ -3495,7 +3503,8 @@
             selectedAnswerIndex = null;
             selectedTabIndex = 0;
 
-            await scrollToBottom();
+            // 切换到历史会话时默认显示最开头（最早消息）而不是底部
+            await scrollToTop();
         }
     }
 
@@ -5391,7 +5400,9 @@
                                                     on:click={() => copyMessage(doc.content || '')}
                                                     title={t('aiSidebar.actions.copyMessage')}
                                                 >
-                                                    <svg class="b3-button__icon"><use xlink:href="#iconCopy"></use></svg>
+                                                    <svg class="b3-button__icon">
+                                                        <use xlink:href="#iconCopy"></use>
+                                                    </svg>
                                                 </button>
                                             </div>
                                         {/each}
