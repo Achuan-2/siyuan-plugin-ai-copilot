@@ -213,6 +213,160 @@
         contextDocuments = updatedDocs;
     }
 
+    // 重新生成单个多模型响应（在多模型选择阶段使用）
+    async function regenerateModelResponse(index: number) {
+        const response = multiModelResponses[index];
+        if (!response) {
+            pushErrMsg(t('aiSidebar.errors.noMessage'));
+            return;
+        }
+
+        // 如果目标模型正在加载中，则拒绝重复触发
+        if (response.isLoading) {
+            pushErrMsg(t('aiSidebar.errors.generating'));
+            return;
+        }
+
+        const config = getProviderAndModelConfig(response.provider, response.modelId);
+        if (!config) {
+            pushErrMsg(t('aiSidebar.info.noValidModel') || '无效的模型');
+            return;
+        }
+
+        const { providerConfig, modelConfig } = config;
+        if (!providerConfig || !providerConfig.apiKey) {
+            pushErrMsg(t('aiSidebar.errors.noApiKey'));
+            return;
+        }
+
+        // 标记为加载中并清空内容/错误
+        multiModelResponses[index] = {
+            ...multiModelResponses[index],
+            isLoading: true,
+            error: undefined,
+            content: '',
+            thinking: '',
+            thinkingCollapsed: false,
+        };
+        multiModelResponses = [...multiModelResponses];
+
+        // 获取最后一条用户消息并准备上下文
+        const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+        if (!lastUserMessage) {
+            pushErrMsg(t('aiSidebar.errors.noUserMessage'));
+            multiModelResponses[index].isLoading = false;
+            multiModelResponses = [...multiModelResponses];
+            return;
+        }
+
+        const contextDocumentsWithLatestContent: ContextDocument[] = [];
+        const userContextDocs = lastUserMessage.contextDocuments || [];
+        for (const doc of userContextDocs) {
+            try {
+                let content: string;
+                if (chatMode === 'edit') {
+                    const blockData = await getBlockKramdown(doc.id);
+                    content = (blockData && blockData.kramdown) || doc.content;
+                } else {
+                    const data = await exportMdContent(doc.id, false, false, 2, 0, false);
+                    content = (data && data.content) || doc.content;
+                }
+                contextDocumentsWithLatestContent.push({
+                    id: doc.id,
+                    title: doc.title,
+                    content,
+                    type: doc.type,
+                });
+            } catch (error) {
+                console.error(`Failed to fetch latest content for block ${doc.id}:`, error);
+                contextDocumentsWithLatestContent.push(doc);
+            }
+        }
+
+        const userContent =
+            typeof lastUserMessage.content === 'string'
+                ? lastUserMessage.content
+                : getMessageText(lastUserMessage.content);
+        const userMessage: Message = {
+            role: 'user',
+            content: userContent,
+            attachments: lastUserMessage.attachments,
+            contextDocuments:
+                contextDocumentsWithLatestContent.length > 0
+                    ? contextDocumentsWithLatestContent
+                    : undefined,
+        };
+
+        const messagesToSend = prepareMessagesForAI(
+            messages,
+            contextDocumentsWithLatestContent,
+            userContent,
+            userMessage
+        );
+
+        // 本次请求的 AbortController（用于单个模型的中断）
+        const localAbort = new AbortController();
+
+        try {
+            let fullText = '';
+            let thinking = '';
+
+            await chat(
+                response.provider,
+                {
+                    apiKey: providerConfig.apiKey,
+                    model: modelConfig.id,
+                    messages: messagesToSend,
+                    temperature: tempModelSettings.temperature,
+                    maxTokens: modelConfig.maxTokens > 0 ? modelConfig.maxTokens : undefined,
+                    stream: true,
+                    signal: localAbort.signal,
+                    enableThinking: modelConfig.capabilities?.thinking || false,
+                    onThinkingChunk: async (chunk: string) => {
+                        thinking += chunk;
+                        multiModelResponses[index].thinking = thinking;
+                        multiModelResponses = [...multiModelResponses];
+                    },
+                    onThinkingComplete: () => {
+                        if (multiModelResponses[index].thinking) {
+                            multiModelResponses[index].thinkingCollapsed = true;
+                            multiModelResponses = [...multiModelResponses];
+                        }
+                    },
+                    onChunk: async (chunk: string) => {
+                        fullText += chunk;
+                        multiModelResponses[index].content = fullText;
+                        multiModelResponses = [...multiModelResponses];
+                    },
+                    onComplete: async (text: string) => {
+                        multiModelResponses[index].content = convertLatexToMarkdown(text);
+                        multiModelResponses[index].thinking = thinking;
+                        multiModelResponses[index].isLoading = false;
+                        if (thinking && !multiModelResponses[index].thinkingCollapsed) {
+                            multiModelResponses[index].thinkingCollapsed = true;
+                        }
+                        multiModelResponses = [...multiModelResponses];
+                    },
+                    onError: (error: Error) => {
+                        if (error.message !== 'Request aborted') {
+                            multiModelResponses[index].error = error.message;
+                            multiModelResponses[index].isLoading = false;
+                            multiModelResponses = [...multiModelResponses];
+                        }
+                    },
+                },
+                providerConfig.customApiUrl,
+                providerConfig.advancedConfig
+            );
+        } catch (error) {
+            if ((error as Error).message !== 'Request aborted') {
+                multiModelResponses[index].error = (error as Error).message;
+                multiModelResponses[index].isLoading = false;
+                multiModelResponses = [...multiModelResponses];
+            }
+        }
+    }
+
     // Agent 模式
     let isToolSelectorOpen = false;
     let selectedTools: ToolConfig[] = []; // 选中的工具配置列表
@@ -5873,7 +6027,16 @@
                                                 </svg>
                                             </button>
                                         {/if}
-                                        {#if !response.isLoading && !response.error && isWaitingForAnswerSelection}
+                                        {#if !response.isLoading && isWaitingForAnswerSelection}
+                                            <button
+                                                class="b3-button b3-button--text"
+                                                on:click={() => regenerateModelResponse(index)}
+                                                title={t('aiSidebar.actions.regenerate')}
+                                            >
+                                                <svg class="b3-button__icon">
+                                                    <use xlink:href="#iconRefresh"></use>
+                                                </svg>
+                                            </button>
                                             <button
                                                 class="b3-button b3-button--primary ai-sidebar__multi-model-select-btn"
                                                 on:click={() => selectMultiModelAnswer(index)}
@@ -6017,7 +6180,17 @@
                                                     </svg>
                                                 </button>
                                             {/if}
-                                            {#if !response.isLoading && !response.error && isWaitingForAnswerSelection}
+                                            {#if !response.isLoading && isWaitingForAnswerSelection}
+                                                <button
+                                                    class="b3-button b3-button--text"
+                                                    on:click={() =>
+                                                        regenerateModelResponse(selectedTabIndex)}
+                                                    title={t('aiSidebar.actions.regenerate')}
+                                                >
+                                                    <svg class="b3-button__icon">
+                                                        <use xlink:href="#iconRefresh"></use>
+                                                    </svg>
+                                                </button>
                                                 <button
                                                     class="b3-button b3-button--primary ai-sidebar__multi-model-select-btn"
                                                     on:click={() =>
