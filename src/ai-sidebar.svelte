@@ -1458,8 +1458,8 @@
         // 创建assistant消息，包含多模型完整结果
         const assistantMessage: Message = {
             role: 'assistant',
-            content: '', // 不显示单独的内容，只显示多模型页签
-            thinking: '', // 保存思考内容
+            content: selectedResponse.content, // 设置为选择的答案内容，以便连续对话时包含上下文
+            thinking: selectedResponse.thinking || '', // 保存思考内容
             multiModelResponses: multiModelResponses.map((response, i) => ({
                 ...response,
                 isSelected: i === index, // 标记哪个被选择,
@@ -5592,8 +5592,8 @@
                             </div>
                         {/if}
 
-                        <!-- 显示消息内容（只有在有实际内容时才显示） -->
-                        {#if message.content && message.content.toString().trim()}
+                        <!-- 显示消息内容（只有在有实际内容时才显示，且没有多模型响应时才显示） -->
+                        {#if message.content && message.content.toString().trim() && !(message.role === 'assistant' && message.multiModelResponses && message.multiModelResponses.length > 0)}
                             <div
                                 class="ai-message__content b3-typography"
                                 style={messageFontSize ? `font-size: ${messageFontSize}px;` : ''}
