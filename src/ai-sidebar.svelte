@@ -5564,7 +5564,7 @@
                         <!-- 不渲染 tool 消息 -->
                     {:else}
                         <!-- 显示思考过程 -->
-                        {#if message.role === 'assistant' && message.thinking}
+                        {#if message.role === 'assistant' && message.thinking && !( message.multiModelResponses && message.multiModelResponses.length > 0)}
                             {@const thinkingIndex = messageIndex + msgIndex}
                             <div class="ai-message__thinking">
                                 <div
